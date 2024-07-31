@@ -76,7 +76,7 @@ func init() {
 		return
 	}
 
-	if err := saveConfig(); err != nil {
+	if err := SaveConfig(); err != nil {
 		log.Error("Error saving config: ", err)
 	}
 
@@ -155,8 +155,8 @@ func checkAndCreateDatabase() error {
 	return nil
 }
 
-// saveConfig 将配置保存回文件
-func saveConfig() error {
+// SaveConfig 将配置保存回文件
+func SaveConfig() error {
 	if _, err := os.Stat(viper.ConfigFileUsed()); os.IsNotExist(err) {
 		if err = viper.WriteConfigAs("application.yaml"); err != nil {
 			return err
