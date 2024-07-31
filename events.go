@@ -5,6 +5,8 @@ import (
 	"OneBotAssistant/course"
 	"OneBotAssistant/hero"
 	"OneBotAssistant/molly"
+	"OneBotAssistant/reply"
+	"OneBotAssistant/sensitive"
 	"OneBotAssistant/util"
 	"context"
 	"github.com/ThinkerWen/glib-onebot"
@@ -24,6 +26,12 @@ func LoadAllEvents(bot *onebot.Bot) {
 	}
 	if config.CONFIG.Molly.Enable {
 		molly.LoadMollyEvent(bot)
+	}
+	if config.CONFIG.Sensitive.Enable {
+		sensitive.LoadSensitiveEvent(bot)
+	}
+	if config.CONFIG.AutoReply.Enable {
+		reply.LoadAutoReplyEvent(bot)
 	}
 }
 

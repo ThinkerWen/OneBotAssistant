@@ -1,8 +1,10 @@
 package config
 
 import (
+	"database/sql"
 	"errors"
 	"github.com/charmbracelet/log"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -13,6 +15,8 @@ type Config struct {
 	ApiUrl       string             `mapstructure:"api_url"`
 	Molly        MollyConfig        `mapstructure:"molly"`
 	HeroPower    HeroPowerConfig    `mapstructure:"hero_power"`
+	Sensitive    SensitiveConfig    `mapstructure:"sensitive"`
+	AutoReply    AutoReplyConfig    `mapstructure:"auto_reply"`
 	OnlineCourse OnlineCourseConfig `mapstructure:"online_course"`
 }
 
@@ -25,9 +29,9 @@ type MollyConfig struct {
 	Enable    bool    `mapstructure:"enable"`
 	QQ        int64   `mapstructure:"qq"`
 	Name      string  `mapstructure:"name"`
-	ApiKey    string  `mapstructure:"api_key"`
-	ApiSecret string  `mapstructure:"api_secret"`
 	Groups    []int64 `mapstructure:"groups"`
+	ApiKey    string  `mapstructure:"api_key" json:"api_key"`
+	ApiSecret string  `mapstructure:"api_secret" json:"api_secret"`
 }
 
 type OnlineCourseConfig struct {
@@ -37,6 +41,19 @@ type OnlineCourseConfig struct {
 	Groups []int64 `mapstructure:"groups"`
 }
 
+type SensitiveConfig struct {
+	Enable      bool    `mapstructure:"enable"`
+	Groups      []int64 `mapstructure:"groups"`
+	AlertTimes  int     `mapstructure:"alert_times" json:"alert_times"`
+	ShutSeconds int     `mapstructure:"shut_seconds" json:"shut_seconds"`
+}
+
+type AutoReplyConfig struct {
+	Enable bool    `mapstructure:"enable"`
+	Groups []int64 `mapstructure:"groups"`
+}
+
+var DB *sql.DB
 var CONFIG Config
 
 func init() {
@@ -61,6 +78,10 @@ func init() {
 
 	if err := saveConfig(); err != nil {
 		log.Error("Error saving config: ", err)
+	}
+
+	if err := checkAndCreateDatabase(); err != nil {
+		log.Error(err)
 	}
 }
 
@@ -87,6 +108,51 @@ func initDefaultConfig() {
 		Limit:  1,
 		Groups: []int64{},
 	})
+	viper.SetDefault("sensitive", SensitiveConfig{
+		Enable:      true,
+		Groups:      []int64{},
+		AlertTimes:  3,
+		ShutSeconds: 60,
+	})
+	viper.SetDefault("auto_reply", AutoReplyConfig{
+		Enable: true,
+		Groups: []int64{},
+	})
+}
+
+// checkAndCreateDatabase 初始化SQLite表
+func checkAndCreateDatabase() error {
+	var err error
+	if DB, err = sql.Open("sqlite3", "one_bot_assistant.db"); err != nil {
+		return err
+	}
+
+	createAutoReply := `
+	CREATE TABLE IF NOT EXISTS "auto_reply" (
+		id         integer 		not null primary key autoincrement,
+		ask        varchar(255) default ''                not null,
+		reply      TEXT         default ''                not null,
+		group_id   varchar(15)  default ''                not null,
+		user_id    varchar(15)  default ''                not null,
+		created_at timestamp    default CURRENT_TIMESTAMP not null
+	);`
+	createSensitive := `
+	CREATE TABLE IF NOT EXISTS "sensitive_words" (
+	  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	  "sensitive_word" varchar(255) NOT NULL DEFAULT '',
+	  "group_id" varchar(15) NOT NULL DEFAULT '',
+	  "user_id" varchar(15) NOT NULL DEFAULT '',
+	  "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	if _, err = DB.Exec(createAutoReply); err != nil {
+		return err
+	}
+	if _, err = DB.Exec(createSensitive); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // saveConfig 将配置保存回文件

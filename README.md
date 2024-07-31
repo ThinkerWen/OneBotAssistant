@@ -127,7 +127,7 @@ hosts:    # 插件的管理员，所有设置指令只能由管理员触发
   - 296854007
 auto_reply:   # 自动回复
   enable: true
-  groups:     # 开启自动回复的群uin（后续方法以此类推）
+  groups:     # 开启自动回复的群号（后续方法以此类推）
     - 123456
 hero_power:   # 王者荣耀战力
   enable: true
@@ -153,8 +153,6 @@ sensitive:        # 敏感词检测
   shut_seconds: 60  # 禁言时长（秒）
   groups:
     - 123456
-  keywords:       # 自定义敏感词关键字
-    - 蠢机器人
 ```
 
 ****
