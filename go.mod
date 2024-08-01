@@ -3,7 +3,7 @@ module OneBotAssistant
 go 1.22
 
 require (
-	github.com/ThinkerWen/glib-onebot v0.1.1
+	github.com/ThinkerWen/glib-onebot v0.1.2
 	github.com/charmbracelet/log v0.4.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-resty/resty/v2 v2.13.1
