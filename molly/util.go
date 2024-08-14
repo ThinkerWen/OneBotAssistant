@@ -19,6 +19,9 @@ type ContentMolly struct {
 }
 
 func mollyChat(content ContentMolly) string {
+	var err error
+	var data []byte
+	var response []byte
 	headers := make(map[string]string)
 	headers["Api-Key"] = config.CONFIG.Molly.ApiKey
 	headers["Api-Secret"] = config.CONFIG.Molly.ApiSecret
@@ -26,11 +29,11 @@ func mollyChat(content ContentMolly) string {
 	client := resty.New()
 	client.SetHeaders(headers)
 	client.SetTimeout(10 * time.Second)
-	if data, errJson := json.Marshal(content); errJson == nil {
-		if response, err := util.RequestPOST("https://api.mlyai.com/reply", string(data), headers, client); err == nil {
+	if data, err = json.Marshal(content); err == nil {
+		if response, err = util.RequestPOST("https://api.mlyai.com/reply", string(data), headers, client); err == nil {
 			return string(response)
 		}
 	}
-	log.Error("Molly 聊天调用失败")
+	log.Error("Molly 聊天调用失败", "err", err)
 	return ""
 }

@@ -57,14 +57,14 @@ func loadPluginSettingsEvent(bot *onebot.Bot) {
 	})
 }
 
-func operation(message []messages.Message, op func(host int64, key string)) {
+func operation(message []messages.Message, op func(host int64)) {
 	for _, msg := range message {
 		if msg.Type != "at" {
 			continue
 		}
 		user := messages.MsgParser(msg).AsAt().QQ
 		if uid, err := strconv.ParseInt(user, 10, 64); err == nil {
-			op(uid, "hosts")
+			op(uid)
 		}
 	}
 }

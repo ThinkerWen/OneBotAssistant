@@ -2,122 +2,120 @@ package config
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/charmbracelet/log"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 	"os"
+	"sync"
 )
 
 type Config struct {
-	Proxy        string             `mapstructure:"proxy"`
-	Hosts        []int64            `mapstructure:"hosts"`
-	ApiUrl       string             `mapstructure:"api_url"`
-	Molly        MollyConfig        `mapstructure:"molly"`
-	HeroPower    HeroPowerConfig    `mapstructure:"hero_power"`
-	Sensitive    SensitiveConfig    `mapstructure:"sensitive"`
-	AutoReply    AutoReplyConfig    `mapstructure:"auto_reply"`
-	OnlineCourse OnlineCourseConfig `mapstructure:"online_course"`
+	ApiUrl       string             `yaml:"api_url"`
+	Proxy        string             `yaml:"proxy"`
+	Hosts        []int64            `yaml:"hosts"`
+	Molly        MollyConfig        `yaml:"molly"`
+	HeroPower    HeroPowerConfig    `yaml:"hero_power"`
+	Sensitive    SensitiveConfig    `yaml:"sensitive"`
+	AutoReply    AutoReplyConfig    `yaml:"auto_reply"`
+	OnlineCourse OnlineCourseConfig `yaml:"online_course"`
 }
 
 type HeroPowerConfig struct {
-	Enable bool    `mapstructure:"enable"`
-	Groups []int64 `mapstructure:"groups"`
+	Enable bool    `yaml:"enable"`
+	Groups []int64 `yaml:"groups"`
 }
 
 type MollyConfig struct {
-	Enable    bool    `mapstructure:"enable"`
-	QQ        int64   `mapstructure:"qq"`
-	Name      string  `mapstructure:"name"`
-	Groups    []int64 `mapstructure:"groups"`
-	ApiKey    string  `mapstructure:"api_key" json:"api_key"`
-	ApiSecret string  `mapstructure:"api_secret" json:"api_secret"`
+	Enable    bool    `yaml:"enable"`
+	QQ        int64   `yaml:"qq"`
+	Name      string  `yaml:"name"`
+	Groups    []int64 `yaml:"groups"`
+	ApiKey    string  `yaml:"api_key"`
+	ApiSecret string  `yaml:"api_secret"`
 }
 
 type OnlineCourseConfig struct {
-	Enable bool    `mapstructure:"enable"`
-	Token  string  `mapstructure:"token"`
-	Limit  int     `mapstructure:"limit"`
-	Groups []int64 `mapstructure:"groups"`
+	Enable bool    `yaml:"enable"`
+	Token  string  `yaml:"token"`
+	Limit  int     `yaml:"limit"`
+	Groups []int64 `yaml:"groups"`
 }
 
 type SensitiveConfig struct {
-	Enable      bool    `mapstructure:"enable"`
-	Groups      []int64 `mapstructure:"groups"`
-	AlertTimes  int     `mapstructure:"alert_times" json:"alert_times"`
-	ShutSeconds int     `mapstructure:"shut_seconds" json:"shut_seconds"`
+	Enable      bool    `yaml:"enable"`
+	Groups      []int64 `yaml:"groups"`
+	AlertTimes  int     `yaml:"alert_times"`
+	ShutSeconds int     `yaml:"shut_seconds"`
 }
 
 type AutoReplyConfig struct {
-	Enable bool    `mapstructure:"enable"`
-	Groups []int64 `mapstructure:"groups"`
+	Enable bool    `yaml:"enable"`
+	Groups []int64 `yaml:"groups"`
 }
 
 var DB *sql.DB
 var CONFIG Config
+var mu sync.Mutex
 
 func init() {
 	workDir, _ := os.Getwd()
-	viper.AddConfigPath(workDir)
-	viper.SetConfigType("yaml")
-	viper.SetConfigName("application")
-	initDefaultConfig()
-
-	if err := viper.ReadInConfig(); err != nil {
-		var configFileNotFoundError viper.ConfigFileNotFoundError
-		if errors.As(err, &configFileNotFoundError) {
-			if err = viper.SafeWriteConfig(); err != nil {
-				return
-			}
+	yamlFile, err := os.ReadFile(workDir + "/application.yaml")
+	if err != nil {
+		initDefaultConfig()
+		if err = SaveConfig(); err != nil {
+			log.Fatalf("Error saving config: %v", err)
 		}
+	} else if err = yaml.Unmarshal(yamlFile, &CONFIG); err != nil {
+		log.Fatalf("Error unmarshalling YAML: %v", err)
 	}
 
-	if err := viper.Unmarshal(&CONFIG); err != nil {
-		return
+	if err = checkAndCreateDatabase(); err != nil {
+		log.Fatalf("Error creating database: %v", err)
 	}
-
-	if err := SaveConfig(); err != nil {
-		log.Error("Error saving config: ", err)
-	}
-
-	if err := checkAndCreateDatabase(); err != nil {
-		log.Error(err)
-	}
+	log.Info("Load config successfully")
 }
 
 func initDefaultConfig() {
-	viper.SetDefault("proxy", "")
-	viper.SetDefault("hosts", []int64{})
-	viper.SetDefault("api_url", "ws://127.0.0.1:3001")
+	config := new(Config)
+	config.Proxy = ""
+	config.Hosts = []int64{}
+	config.ApiUrl = "ws://127.0.0.1:3001"
 
-	viper.SetDefault("hero_power", HeroPowerConfig{
+	config.HeroPower = HeroPowerConfig{
 		Enable: true,
 		Groups: []int64{},
-	})
-	viper.SetDefault("molly", MollyConfig{
+	}
+
+	config.Molly = MollyConfig{
 		Enable:    true,
 		QQ:        123456,
 		Name:      "molly-bot",
 		ApiKey:    "",
 		ApiSecret: "",
 		Groups:    []int64{},
-	})
-	viper.SetDefault("online_course", OnlineCourseConfig{
+	}
+
+	config.OnlineCourse = OnlineCourseConfig{
 		Enable: true,
 		Token:  "free",
 		Limit:  1,
 		Groups: []int64{},
-	})
-	viper.SetDefault("sensitive", SensitiveConfig{
+	}
+
+	config.Sensitive = SensitiveConfig{
 		Enable:      true,
 		Groups:      []int64{},
 		AlertTimes:  3,
 		ShutSeconds: 60,
-	})
-	viper.SetDefault("auto_reply", AutoReplyConfig{
+	}
+
+	config.AutoReply = AutoReplyConfig{
 		Enable: true,
 		Groups: []int64{},
-	})
+	}
+
+	CONFIG = *config
+	log.Info("Set default config successfully")
 }
 
 // checkAndCreateDatabase 初始化SQLite表
@@ -157,16 +155,18 @@ func checkAndCreateDatabase() error {
 
 // SaveConfig 将配置保存回文件
 func SaveConfig() error {
-	if _, err := os.Stat(viper.ConfigFileUsed()); os.IsNotExist(err) {
-		if err = viper.WriteConfigAs("application.yaml"); err != nil {
-			return err
-		}
-	} else {
-		if err = viper.WriteConfig(); err != nil {
-			return err
-		}
+	mu.Lock()
+	defer mu.Unlock()
+	workDir, _ := os.Getwd()
+	yamlData, err := yaml.Marshal(CONFIG)
+	if err != nil {
+		return err
 	}
 
-	log.Info("Configuration saved successfully.")
+	if err = os.WriteFile(workDir+"/application.yaml", yamlData, 0644); err != nil {
+		return err
+	}
+
+	log.Info("Configuration saved successfully")
 	return nil
 }

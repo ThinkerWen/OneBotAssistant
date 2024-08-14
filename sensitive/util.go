@@ -25,7 +25,7 @@ func isSensitive(content string) bool {
 	data := fmt.Sprintf(`content=%s`, url.QueryEscape(content))
 	response, err := util.RequestPOST("http://www.zhipaiwu.com/index.php/Weijinci/postIndex.html", data, headers, nil)
 	if err != nil || gjson.Get(string(response), "code").Int() != 200 {
-		log.Errorf("敏感词检测请求异常: %v", err)
+		log.Error("敏感词检测请求异常", "err", err)
 		return false
 	}
 	if gjson.Get(string(response), "result.minganCount").Int() != 0 {

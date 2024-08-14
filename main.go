@@ -5,8 +5,6 @@ import (
 	"context"
 	"github.com/ThinkerWen/glib-onebot"
 	"github.com/charmbracelet/log"
-	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -14,12 +12,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	viper.OnConfigChange(func(e fsnotify.Event) {
-		log.Info("Config file changed: " + e.Name)
-		_ = viper.Unmarshal(&config.CONFIG)
-	})
-	viper.WatchConfig()
 
 	LoadAllEvents(bot)
 	log.SetLevel(log.InfoLevel)

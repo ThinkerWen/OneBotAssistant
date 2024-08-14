@@ -17,7 +17,7 @@ func searchReason(param string) string {
 	client.SetTimeout(10 * time.Second)
 	response, err := util.RequestGET(link, nil, client)
 	if err != nil || gjson.Get(string(response), "code").Int() != 0 {
-		log.Error("搜索接口调用失败 Error: ", err)
+		log.Error("搜索接口调用失败", "err", err)
 		return ""
 	}
 	result := string(response)
