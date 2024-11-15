@@ -1,0 +1,35 @@
+name: QQBotAssistant
+api_url: http://127.0.0.1:8086  # OPQ服务的地址
+proxy: "" # 本程序中外部网络请求的代理，默认无代理（敏感词检测的API会用到）
+hosts:    # 插件的管理员，所有设置指令只能由管理员触发
+    - 296854007
+auto_reply:   # 自动回复
+    enable: true
+    groups:     # 开启自动回复的群uin（后续方法以此类推）
+        - 123456
+hero_power:   # 王者荣耀战力
+    enable: true
+    groups:
+        - 123456
+molly:        # 聊天机器人
+    enable: true
+    api_key: ""     # 茉莉云api_key
+    api_secret: ""  # 茉莉云api_secret
+    qq: 296854007   # 聊天机器人QQ
+    name: 小风       # 茉莉云机器人名称
+    groups:
+        - 123456
+online_course:    # 大学生网课搜题
+    enable: true
+    groups:
+        - 123456
+    limit: 1        # 网课答案展示限制条数
+    token: free     # API token，默认free，有免费额度
+sensitive:        # 敏感词检测
+    enable: true
+    alert_times: 3  # 警告次数，撤回敏感超过警告次数后则会禁言
+    shut_seconds: 60  # 禁言时长（秒）
+    groups:
+        - 123456
+    keywords:       # 自定义敏感词关键字
+        - 蠢机器人

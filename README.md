@@ -30,6 +30,17 @@
 
 ## 安装
 
+### Docker(推荐)
+```shell
+docker run -d \
+  --restart=unless-stopped \
+  -v ./application.yaml:/app/application.yaml \
+  -v ./auto_reply_config.yaml:/app/auto_reply_config.yaml \
+  -v ./one_bot_assistant.db:/app/one_bot_assistant.db \
+  --name="OneBotAssistant" \
+  designerwang/one-bot-assistant:latest
+```
+
 ### linux
 ```bash
 # 下载可执行文件
