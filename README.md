@@ -35,7 +35,6 @@
 docker run -d \
   --restart=unless-stopped \
   -v ./application.yaml:/app/application.yaml \
-  -v ./auto_reply_config.yaml:/app/auto_reply_config.yaml \
   -v ./one_bot_assistant.db:/app/one_bot_assistant.db \
   --name="OneBotAssistant" \
   designerwang/one-bot-assistant:latest
